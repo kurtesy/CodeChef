@@ -1,0 +1,39 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Sep  3 13:03:32 2018
+
+@author: npatel
+"""
+
+import requests
+import json
+import pandas as pd
+import sqlite3 as db
+from pprint import pprint
+
+def get_token():
+    url = 'https://api.codechef.com/oauth/token'
+    headers={"grant_type":"client_credentials", 
+             "scope":"public",
+             "client_id":"2a96e13d942d66a3e1b2087805ffa9e8",
+             "client_secret":"7743efbc1dec1ed04597da33e7fd4278"
+             }
+    response = requests.post(url, json=headers)
+    return response.json()['result']['data']['access_token']
+
+
+categories = ['school', 'easy', 'medium', 'hard', 'challenge', 'extcontest']
+base_url = 'https://api.codechef.com/problems/'
+TOKEN = get_token()
+connection = db.connect('codechef.db')
+
+all_problems = pd.DataFrame(columns = ['accuracy', 'problemCode', 'problemName', 'successfulSubmissions'])
+
+for category in categories:
+    response = requests.get(base_url+category, headers={'Authorization': 'Bearer %s' % (TOKEN)}, params=[])
+    print(response)
+    data = response.json()['result']['data']['content']
+    problems = pd.DataFrame(data)
+    all_problems.append(problems, ignore_index=True)
+all_problems.to_csv(r'C:\Users\npatel\Documents\Python Scripts\problems.csv')
+all_problems.to_sql('problems', connection, if_exists='append')
